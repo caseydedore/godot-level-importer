@@ -2,7 +2,7 @@
 
 This plugin prepares imported scenes as a playable level in a post-process step in a GLB object's import.
 
-Levels are built in an external modeling tool and imported to Godot with basic level requirements already configured. This includes Object replacements (ie, replace a placeholder object with a logic driven objects), Material assignments, collision mesh setup and lightmap UV setup.
+Levels are built in an external modeling tool and imported to Godot with basic level requirements already configured. This includes object replacements (ie, replace a placeholder with a logic driven version), material assignments, collision mesh setup and lightmap setup.
 
 Requires a Godot 4 .NET release.
 
@@ -10,9 +10,11 @@ Requires a Godot 4 .NET release.
 * Most level geometry is static and has collisions.
 * Geometry is not too complex or dense. For example, target early-mid 2000s era complexity.
 * Geometry is split into individual meshes where logical.
-* Logic and interactive objects are self-contained placeholders (replaced by PackedScenes during import).
+* Most geometry is lightmapped.
+* Logic driven, interactive, or particularly complex objects are represented by placeholders and replaced by PackedScenes during import.
 * Lighting is managed in Godot.
 * Logic is managed in Godot.
+* Level objects are not modified directly after import. The level object, or scene in Godot terms, is added to another scene as a child. All remaining work is achieved under a parent.
 
 ## Setup
 * Add plugin to `addons` directory in the Godot project root.
@@ -21,7 +23,7 @@ Requires a Godot 4 .NET release.
 
 ## Settings
 * Adjust settings in `LevelImporterProcessor` as needed and recompile the project.
-* Scenes are determined to be levels based on naming convention.
+* Scenes are processed by the importer based on naming convention. Scene names containing `Level` by default will be processed automatically during import.
 * Plugin paths must be configured for the Godot project.
   * Automatic replacement of scene assets requires paths to the replacements.
   * Replacement asset directories should be reserved for such assets only.
@@ -46,7 +48,7 @@ Objects in the imported scene with names containing attributes are processed spe
 ### Attributes
 * `NoCol` No collision mesh generation.
 * `OnlyCol` Removal of render mesh (used for invisible colliders).
-* `ConvexCol` Simplified collision mesh generation.
+* `ConvexCol` Simplified collision mesh generation (convex instead of concave).
 * `Col{n}` Collision layer assignment (bits).
 * `ColMask{n}` Collision mask assignment (bits).
 * `NoBake` Set to Dynamic instead of Static and do not generate Lightmap UV.
