@@ -31,6 +31,7 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
     const string collisionMaskLayerAttribute = "ColMask"; // Collision mask layer assignment (bits).
     const string collisionOnlyAttribute = "OnlyCol"; // Mesh copied as collider mesh and original mesh removed from rendering.
     const string noLightBakeAttribute = "NoBake"; // Disable from being included in static GI baking.
+    const string noShadowAttribute = "NoShadow"; // Disable casting shadows.
     const char valueAttributeStart = '{'; // Start of value for an attribute.
     const char valueAttributeEnd = '}'; // End of value for an attribute.
     const string materialPath = "Assets/Level/Material/"; // Location of Materials to replace those in the import based on matching names.
@@ -59,6 +60,7 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
             AddStaticCollisionMeshes(scene, n);
             RemoveMeshIfColliderOnly(n);
             EnableLightmapUvs(n);
+            UpdateShadowMode(n);
             ReplaceMaterials(n);
         });
         var replaceableNodes = nodes.Except(staticNodes);
@@ -165,12 +167,24 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
             }
             newMesh.LightmapUnwrap(m.Transform, texelSize);
             m.Mesh = newMesh;
-            m.CastShadow = GeometryInstance3D.ShadowCastingSetting.DoubleSided;
         });
         var nonLightmapMeshes = meshes
             .Where(c => c.Name.ToString().Contains(noLightBakeAttr))
             .ToList();
         nonLightmapMeshes.ForEach(m => m.GIMode = GeometryInstance3D.GIModeEnum.Dynamic);
+    }
+
+    static void UpdateShadowMode(Node node)
+    {
+        var noShadowAttr = $"{engineAttributeIndicator}{noShadowAttribute}";
+        var meshes = NodeUtility.GetAllChildrenWithSelf(node)
+            .Where(c => c is MeshInstance3D)
+            .Select(c => c as MeshInstance3D)
+            .Where(c => c.Mesh != null);
+        var shadowCasters = meshes.Where(m => !m.Name.ToString().Contains(noShadowAttr)).ToList();
+        var nonCasters = meshes.Except(shadowCasters).ToList();
+        shadowCasters.ForEach(m => m.CastShadow = GeometryInstance3D.ShadowCastingSetting.DoubleSided);
+        nonCasters.ForEach(m => m.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off);
     }
 
     static void ReplaceMaterials(Node node)
