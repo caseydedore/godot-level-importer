@@ -31,12 +31,13 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
     const string collisionMaskLayerAttribute = "ColMask"; // Collision mask layer assignment (bits).
     const string collisionOnlyAttribute = "OnlyCol"; // Mesh copied as collider mesh and original mesh removed from rendering.
     const string noLightBakeAttribute = "NoBake"; // Disable from being included in static GI baking.
+    const string texelMultiplierAttribute = "Texel"; // Specify multiplier to texel size.
     const string noShadowAttribute = "NoShadow"; // Disable casting shadows.
     const char valueAttributeStart = '{'; // Start of value for an attribute.
     const char valueAttributeEnd = '}'; // End of value for an attribute.
     const string materialPath = "Assets/Level/Material/"; // Location of Materials to replace those in the import based on matching names.
     const string replaceablePath = "Game/LevelPackedScene/";  // Location of PackedScenes to replace MeshInstances in the import based on matching names.
-    const float texelSize = 0.2f * 5f; // Texel size in project settings * arbitrary multiplier.
+    const float texelSize = 0.2f; // Texel size from project settings.
 
     public override void _PostProcess(Node scene)
     {
@@ -146,6 +147,9 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
     static void EnableLightmapUvs(Node node)
     {
         var noLightBakeAttr = $"{engineAttributeIndicator}{noLightBakeAttribute}";
+        var valueStart = Regex.Escape($"{valueAttributeStart}");
+        var valueEnd = Regex.Escape($"{valueAttributeEnd}");
+        var texelMultAttr = $"{engineAttributeIndicator}{texelMultiplierAttribute}{valueStart}[0-9]+{valueEnd}";
 
         var meshes = NodeUtility.GetAllChildrenWithSelf(node)
             .Where(c => c is MeshInstance3D)
@@ -165,7 +169,15 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
                 var material = oldMesh.SurfaceGetMaterial(surfaceId);
                 newMesh.SurfaceSetMaterial(surfaceId, material);
             }
-            newMesh.LightmapUnwrap(m.Transform, texelSize);
+            var texelMultSpecified = Regex.Match(m.Name, texelMultAttr);
+            float GetTexelMultiplier()
+            {
+                var values = Regex.Split(texelMultSpecified.Captures.First().Value, $"[{valueStart}{valueEnd}]");
+                var parsed = float.TryParse(values.Skip(1).FirstOrDefault(), out float layer);
+                return parsed ? layer : 1;
+            }
+            var texelMultiplier = texelMultSpecified.Success ? GetTexelMultiplier() : 1;
+            newMesh.LightmapUnwrap(m.Transform, texelSize * texelMultiplier);
             m.Mesh = newMesh;
         });
         var nonLightmapMeshes = meshes
