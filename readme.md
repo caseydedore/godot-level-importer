@@ -46,9 +46,14 @@ Lightmap UVs are not generated for objects replaced by PackedScenes.
 Objects in the imported scene with names containing attributes are processed specially. Attributes are additions to the object name and may be located anywhere within the name. To be recognized, attributes are preceded by the attribute indicator `=`.
 
 ### Attributes
+Collision
 * `NoCol` No collision mesh generation.
 * `OnlyCol` Removal of render mesh (used for invisible colliders).
 * `ConvexCol` Simplified collision mesh generation (convex instead of concave).
 * `Col{n}` Collision layer assignment (bits).
 * `ColMask{n}` Collision mask assignment (bits).
+
+Rendering
 * `NoBake` Set to Dynamic instead of Static and do not generate Lightmap UV.
+* `Texel{n}` Multiplier for Texel size. Larger values result in lower resolution.
+* `NoShadow` Disable mesh's ability to cast shadows.
