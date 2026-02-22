@@ -124,8 +124,11 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
             .Where(c => c.Name.ToString().Contains(colOnlyAttr))
             .Select(c => c as MeshInstance3D)
             .ToList();
-        // Better would be remove the entire visual node instead of just clearing the mesh. Similar issue to making Replacement swap-outs.
-        colOnlyNodes.ForEach(m => m.Mesh = null);
+        colOnlyNodes.ForEach(m =>
+        {
+            m.Mesh = null; // Better would be remove the entire visual node instead of the mesh. Shared issue with the Replacement swap-outs.
+            m.IgnoreOcclusionCulling = true;
+        });
     }
 
     static CollisionShape3D CreateConcaveCollisionShape(MeshInstance3D mesh)
