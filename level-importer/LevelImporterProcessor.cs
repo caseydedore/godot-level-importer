@@ -30,6 +30,7 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
     const string collisionLayerAttribute = "Col"; // Collision layer assignment (bits).
     const string collisionMaskLayerAttribute = "ColMask"; // Collision mask layer assignment (bits).
     const string collisionOnlyAttribute = "OnlyCol"; // Mesh copied as collider mesh and original mesh removed from rendering.
+    const string renderLayerAttribute = "Layer"; // Render layer (bits).
     const string noLightBakeAttribute = "NoBake"; // Disable from being included in static GI baking.
     const string texelMultiplierAttribute = "Texel"; // Specify multiplier to texel size.
     const string noShadowAttribute = "NoShadow"; // Disable casting shadows.
@@ -62,6 +63,7 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
             RemoveMeshIfColliderOnly(n);
             EnableLightmapUvs(n);
             UpdateShadowMode(n);
+            UpdateRenderLayer(n);
             ReplaceMaterials(n);
         });
         var replaceableNodes = nodes.Except(staticNodes);
@@ -200,6 +202,25 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
         var nonCasters = meshes.Except(shadowCasters).ToList();
         shadowCasters.ForEach(m => m.CastShadow = GeometryInstance3D.ShadowCastingSetting.DoubleSided);
         nonCasters.ForEach(m => m.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off);
+    }
+
+    static void UpdateRenderLayer(Node node)
+    {
+        var valueStart = Regex.Escape($"{valueAttributeStart}");
+        var valueEnd = Regex.Escape($"{valueAttributeEnd}");
+        var layerAttr = $"{engineAttributeIndicator}{renderLayerAttribute}{valueStart}[0-9]+{valueEnd}";
+        var meshesWithAttr = NodeUtility.GetAllChildrenWithSelf(node)
+            .Where(c => c is MeshInstance3D)
+            .Select(c => c as MeshInstance3D)
+            .Where(c => c.Mesh != null)
+            .Select(c => (Mesh: c, Match: Regex.Match(c.Name, layerAttr)))
+            .Where(m => m.Match.Success);
+        meshesWithAttr.ToList().ForEach(m =>
+        {
+            var values = Regex.Split(m.Match.Captures.First().Value, $"[{valueStart}{valueEnd}]");
+            var parsed = uint.TryParse(values.Skip(1).FirstOrDefault(), out uint layer);
+            m.Mesh.Layers = parsed ? layer : 1;
+        });
     }
 
     static void ReplaceMaterials(Node node)
