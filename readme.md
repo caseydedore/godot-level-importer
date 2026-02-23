@@ -54,6 +54,7 @@ Collision
 * `ColMask{n}` Collision mask assignment (bits).
 
 Rendering
+* `Layer{n}` Render layer (bits).
 * `NoBake` Set to Dynamic instead of Static and do not generate Lightmap UV.
 * `Texel{n}` Multiplier for Texel size. Larger values result in lower resolution.
 * `NoShadow` Disable mesh's ability to cast shadows.
