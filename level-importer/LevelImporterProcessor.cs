@@ -29,7 +29,7 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
     const string convexCollisionAttribute = "ConvexCol"; // Generate simpler convex collider based on the object's mesh.
     const string collisionLayerAttribute = "Col"; // Collision layer assignment (bits).
     const string collisionMaskLayerAttribute = "ColMask"; // Collision mask layer assignment (bits).
-    const string collisionOnlyAttribute = "OnlyCol"; // Mesh copied as collider mesh and original mesh removed from rendering.
+    const string noRenderAttribute = "NoRender"; // Mesh copied as collider mesh and original mesh removed from rendering.
     const string renderLayerAttribute = "Layer"; // Render layer (bits).
     const string noLightBakeAttribute = "NoBake"; // Disable from being included in static GI baking.
     const string texelMultiplierAttribute = "Texel"; // Specify multiplier to texel size.
@@ -60,7 +60,7 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
         staticNodes.ToList().ForEach(n =>
         {
             AddStaticCollisionMeshes(scene, n);
-            RemoveMeshIfColliderOnly(n);
+            RemoveMeshIfNoRender(n);
             EnableLightmapUvs(n);
             UpdateShadowMode(n);
             UpdateRenderLayer(n);
@@ -116,14 +116,14 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
         });
     }
 
-    static void RemoveMeshIfColliderOnly(Node node)
+    static void RemoveMeshIfNoRender(Node node)
     {
-        var colOnlyAttr = $"{engineAttributeIndicator}{collisionOnlyAttribute}";
+        var noRenderAttr = $"{engineAttributeIndicator}{noRenderAttribute}";
 
         var nodes = NodeUtility.GetAllChildrenWithSelf(node);
         var colOnlyNodes = nodes
             .Where(c => c is MeshInstance3D)
-            .Where(c => c.Name.ToString().Contains(colOnlyAttr))
+            .Where(c => c.Name.ToString().Contains(noRenderAttr))
             .Select(c => c as MeshInstance3D)
             .ToList();
         colOnlyNodes.ForEach(m =>
