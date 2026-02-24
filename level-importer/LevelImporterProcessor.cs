@@ -22,27 +22,9 @@ namespace LevelImporterEditorTool;
 [Tool]
 public partial class LevelImporterProcessor : EditorScenePostImportPlugin
 {
-    // Investigate ProjectSettings for future config https://docs.godotengine.org/en/stable/classes/class_projectsettings.html
-    const string levelNameIndicator = "Level";
-    const char engineAttributeIndicator = '='; // The indicator preceding a special import attribute within the names of objects.
-    const string noCollisionAttribute = "NoCol"; // No collision features should be enabled on objects with this attribute.
-    const string convexCollisionAttribute = "ConvexCol"; // Generate simpler convex collider based on the object's mesh.
-    const string collisionLayerAttribute = "Col"; // Collision layer assignment (bits).
-    const string collisionMaskLayerAttribute = "ColMask"; // Collision mask layer assignment (bits).
-    const string noRenderAttribute = "NoRender"; // Mesh copied as collider mesh and original mesh removed from rendering.
-    const string renderLayerAttribute = "Layer"; // Render layer (bits).
-    const string noLightBakeAttribute = "NoBake"; // Disable from being included in static GI baking.
-    const string texelMultiplierAttribute = "Texel"; // Specify multiplier to texel size.
-    const string noShadowAttribute = "NoShadow"; // Disable casting shadows.
-    const char valueAttributeStart = '{'; // Start of value for an attribute.
-    const char valueAttributeEnd = '}'; // End of value for an attribute.
-    const string materialPath = "Assets/Level/Material/"; // Location of Materials to replace those in the import based on matching names.
-    const string replaceablePath = "Game/LevelPackedScene/";  // Location of PackedScenes to replace MeshInstances in the import based on matching names.
-    const float texelSize = 0.2f; // Texel size from project settings.
-
     public override void _PostProcess(Node scene)
     {
-        var isLevel = scene.Name.ToString().Contains(levelNameIndicator);
+        var isLevel = scene.Name.ToString().Contains(Settings.levelNameIndicator);
         if (!isLevel)
         {
             return;
@@ -75,12 +57,12 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
 
     static void AddStaticCollisionMeshes(Node scene, Node node)
     {
-        var noColAttr = $"{engineAttributeIndicator}{noCollisionAttribute}";
-        var convexColAttr = $"{engineAttributeIndicator}{convexCollisionAttribute}";
-        var valueStart = Regex.Escape($"{valueAttributeStart}");
-        var valueEnd = Regex.Escape($"{valueAttributeEnd}");
-        var colLayerAttr = $"{engineAttributeIndicator}{collisionLayerAttribute}{valueStart}[0-9]+{valueEnd}";
-        var colMaskAttr = $"{engineAttributeIndicator}{collisionMaskLayerAttribute}{valueStart}[0-9]+{valueEnd}";
+        var noColAttr = $"{Settings.engineAttributeIndicator}{Settings.noCollisionAttribute}";
+        var convexColAttr = $"{Settings.engineAttributeIndicator}{Settings.convexCollisionAttribute}";
+        var valueStart = Regex.Escape($"{Settings.valueAttributeStart}");
+        var valueEnd = Regex.Escape($"{Settings.valueAttributeEnd}");
+        var colLayerAttr = $"{Settings.engineAttributeIndicator}{Settings.collisionLayerAttribute}{valueStart}[0-9]+{valueEnd}";
+        var colMaskAttr = $"{Settings.engineAttributeIndicator}{Settings.collisionMaskLayerAttribute}{valueStart}[0-9]+{valueEnd}";
 
         var nodesWithCollision = NodeUtility.GetAllChildrenWithSelf(node)
             .Where(c => c is MeshInstance3D)
@@ -118,7 +100,7 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
 
     static void RemoveMeshIfNoRender(Node node)
     {
-        var noRenderAttr = $"{engineAttributeIndicator}{noRenderAttribute}";
+        var noRenderAttr = $"{Settings.engineAttributeIndicator}{Settings.noRenderAttribute}";
 
         var nodes = NodeUtility.GetAllChildrenWithSelf(node);
         var colOnlyNodes = nodes
@@ -151,10 +133,10 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
 
     static void EnableLightmapUvs(Node node)
     {
-        var noLightBakeAttr = $"{engineAttributeIndicator}{noLightBakeAttribute}";
-        var valueStart = Regex.Escape($"{valueAttributeStart}");
-        var valueEnd = Regex.Escape($"{valueAttributeEnd}");
-        var texelMultAttr = $"{engineAttributeIndicator}{texelMultiplierAttribute}{valueStart}[0-9]+{valueEnd}";
+        var noLightBakeAttr = $"{Settings.engineAttributeIndicator}{Settings.noLightBakeAttribute}";
+        var valueStart = Regex.Escape($"{Settings.valueAttributeStart}");
+        var valueEnd = Regex.Escape($"{Settings.valueAttributeEnd}");
+        var texelMultAttr = $"{Settings.engineAttributeIndicator}{Settings.texelMultiplierAttribute}{valueStart}[0-9]+{valueEnd}";
 
         var meshes = NodeUtility.GetAllChildrenWithSelf(node)
             .Where(c => c is MeshInstance3D)
@@ -182,7 +164,7 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
                 return parsed ? layer : 1;
             }
             var texelMultiplier = texelMultSpecified.Success ? GetTexelMultiplier() : 1;
-            newMesh.LightmapUnwrap(m.Transform, texelSize * texelMultiplier);
+            newMesh.LightmapUnwrap(m.Transform, Settings.texelSize * texelMultiplier);
             m.Mesh = newMesh;
         });
         var nonLightmapMeshes = meshes
@@ -193,7 +175,7 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
 
     static void UpdateShadowMode(Node node)
     {
-        var noShadowAttr = $"{engineAttributeIndicator}{noShadowAttribute}";
+        var noShadowAttr = $"{Settings.engineAttributeIndicator}{Settings.noShadowAttribute}";
         var meshes = NodeUtility.GetAllChildrenWithSelf(node)
             .Where(c => c is MeshInstance3D)
             .Select(c => c as MeshInstance3D)
@@ -206,9 +188,9 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
 
     static void UpdateRenderLayer(Node node)
     {
-        var valueStart = Regex.Escape($"{valueAttributeStart}");
-        var valueEnd = Regex.Escape($"{valueAttributeEnd}");
-        var layerAttr = $"{engineAttributeIndicator}{renderLayerAttribute}{valueStart}[0-9]+{valueEnd}";
+        var valueStart = Regex.Escape($"{Settings.valueAttributeStart}");
+        var valueEnd = Regex.Escape($"{Settings.valueAttributeEnd}");
+        var layerAttr = $"{Settings.engineAttributeIndicator}{Settings.renderLayerAttribute}{valueStart}[0-9]+{valueEnd}";
         var meshesWithAttr = NodeUtility.GetAllChildrenWithSelf(node)
             .Where(c => c is MeshInstance3D)
             .Select(c => c as MeshInstance3D)
@@ -261,12 +243,12 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
             .OrderByDescending(n => n.name.Length)
             .ToList();
         var replacement = replacements.Count > 0
-            ? ResourceLoader.Load<Material>($"{materialPath}{replacements.First().file}")
+            ? ResourceLoader.Load<Material>($"{Settings.materialPath}{replacements.First().file}")
             : new Material();
         return replacement;
     }
 
-    static (string name, string file)[] GetReplaceableMaterials() => DirAccess.Open(materialPath)
+    static (string name, string file)[] GetReplaceableMaterials() => DirAccess.Open(Settings.materialPath)
         .GetFiles()
         .Where(n => n.Contains(".tres"))
         .Select(n => (n.Split('.')[0], n)).ToArray();
@@ -278,13 +260,13 @@ public partial class LevelImporterProcessor : EditorScenePostImportPlugin
             .OrderByDescending(n => n.name.Length)
             .ToList();
         var replacement = replacements.Count > 0
-            ? ResourceLoader.Load<PackedScene>($"{replaceablePath}{replacements.First().file}").Instantiate() as Node3D
+            ? ResourceLoader.Load<PackedScene>($"{Settings.replaceablePath}{replacements.First().file}").Instantiate() as Node3D
             : new();
         replacement.Name = $"{original} (replaced)";
         return replacement;
     }
 
-    static (string name, string file)[] GetReplaceablePackages() => DirAccess.Open(replaceablePath)
+    static (string name, string file)[] GetReplaceablePackages() => DirAccess.Open(Settings.replaceablePath)
         .GetFiles()
         .Where(n => !n.Contains(".import"))
         .Select(n => (n.Split('.')[0], n)).ToArray();
