@@ -48,7 +48,6 @@ Objects in the imported scene with names containing attributes are processed spe
 ### Attributes
 Collision
 * `NoCol` No collision mesh generation.
-* `OnlyCol` Removal of render mesh (used for invisible colliders).
 * `ConvexCol` Simplified collision mesh generation (convex instead of concave).
 * `Col{n}` Collision layer assignment (bits).
 * `ColMask{n}` Collision mask assignment (bits).
@@ -58,3 +57,4 @@ Rendering
 * `NoBake` Set to Dynamic instead of Static and do not generate Lightmap UV.
 * `Texel{n}` Multiplier for Texel size. Larger values result in lower resolution.
 * `NoShadow` Disable mesh's ability to cast shadows.
+* `NoRender` Remove render mesh (ie for mesh use as invisible collider).
